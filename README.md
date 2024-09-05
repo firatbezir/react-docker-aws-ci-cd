@@ -328,6 +328,124 @@ COPY --from=builder /home/node/app/build /usr/share/nginx/html
 
 ---
 
+## Setting Up CI/CD Workflow with Docker, GitHub, Travis CI, and AWS
+
+- [x] **Development Workflow Overview**:
+   - We’ve now successfully set up Docker containers to handle:
+     - Running `npm run start` for development.
+     - Running `npm run test` for development.
+     - Running `npm run build` for production environments.
+   - Now that our Docker setup is complete, it's time to implement a **Continuous Integration/Continuous Deployment (CI/CD) pipeline** that will:
+     1. Use GitHub as the repository hosting service.
+     2. Use **Travis CI** for running automated tests and managing deployment.
+     3. Use **AWS Elastic Beanstalk** for production deployment.
+  - Here is the flow diagram of what we are going to build:
+    ![image](https://github.com/user-attachments/assets/4874b92b-ca58-41c4-bb6e-06b3bc752ee6)
+
+
+- [x] **Services Overview**:
+   - **GitHub**: We'll be using GitHub to manage our source code and the development process, including branches for features and master branch for deployment.
+     - **Assumption**: You are familiar with GitHub, including creating branches, making commits, and pushing code.
+     - **Requirement**: If you don’t have a GitHub account, create one at [GitHub Signup](https://github.com).
+   
+   - **Travis CI**: We'll be integrating **Travis CI**, a **Continuous Integration** service that automatically runs our tests and deploys the app to AWS once the code is merged into the master branch.
+     - **Assumption**: No prior experience with Travis CI is required. We'll walk through everything step by step.
+     - **Sign up**: If you don't already have a Travis CI account, head over to [Travis CI](https://travis-ci.org/) and sign up using your GitHub account.
+
+   - **AWS Elastic Beanstalk**: We’ll use **AWS** to deploy and host our application.
+     - **Assumption**: AWS may require a credit card to sign up for an account. If you don't have or prefer not to use AWS, that's okay — the steps for deploying to other cloud providers like Google Cloud or Digital Ocean are quite similar.
+     - **Note**: You can still follow along to understand the process, as deploying Dockerized apps across different cloud platforms is quite similar.
+  
+---
+
+- [x] **GitHub Setup**:
+   - **Create a GitHub Repository**: Push your existing project to GitHub.
+     - **Command**:
+       ```bash
+       git init
+       git remote add origin <your-repo-url>
+       git add .
+       git commit -m "Initial commit"
+       git push -u origin master
+       ```
+     - **Explanation**: The above commands initialize a git repository, add your remote GitHub URL, stage all files, commit them, and push to the master branch.
+  
+---
+
+- [x] **Travis CI Configuration**:
+   - **Add Travis CI to Your Repository**:
+     - Go to [Travis CI](https://travis-ci.com) and log in using your GitHub account.
+     - Enable your repository under the Travis CI dashboard.
+   
+   - **Create `.travis.yml` File**:
+     - Add the following configuration to enable continuous integration:
+       ```yaml
+       language: node_js
+       node_js:
+         - "12"
+       
+       services:
+         - docker
+
+       # Script for running tests before deploying
+       script:
+         - docker build -t your-app-name .
+         - docker run your-app-name npm test
+       
+       # Deploy to AWS Elastic Beanstalk
+       deploy:
+         provider: elasticbeanstalk
+         region: "us-west-2"
+         app: "your-app-name"
+         env: "YourApp-env"
+         bucket_name: "elasticbeanstalk-us-west-2-your-bucket"
+         bucket_path: "your-app-name"
+         on:
+           branch: master
+       ```
+     - **Explanation**: This configuration tells Travis CI to use Node.js and Docker, build your Docker image, run tests, and deploy to AWS when changes are pushed to the master branch.
+
+---
+
+- [x] **AWS Elastic Beanstalk Deployment**:
+   - **Create an AWS Elastic Beanstalk Environment**:
+     - Go to the [AWS Management Console](https://aws.amazon.com) and search for **Elastic Beanstalk**.
+     - Create a new application and environment.
+     - Choose **Docker** as the platform and set up your environment.
+
+   - **Configure AWS CLI**:
+     - Install the AWS CLI and configure it with your credentials:
+       ```bash
+       aws configure
+       ```
+     - **Explanation**: This allows Travis CI to authenticate with your AWS account for deployment.
+
+---
+
+- [x] **Testing Your CI/CD Pipeline**:
+   - **Push a Feature Branch**:
+     - Create a new feature branch:
+       ```bash
+       git checkout -b feature-branch
+       ```
+     - Make changes, commit, and push the branch to GitHub.
+   
+   - **Merge to Master**:
+     - Once the feature is complete, merge your feature branch into master:
+       ```bash
+       git checkout master
+       git merge feature-branch
+       git push origin master
+       ```
+     - **Outcome**: Travis CI will automatically run tests and deploy the app to AWS when the code is pushed to the master branch.
+
+---
+
+- [x] **Best Practices**:
+   - **Use Feature Branches**: Always develop new features on a separate branch and only merge into master when ready for deployment.
+   - **Automated Testing**: Ensure your tests are running correctly in the Travis CI pipeline before deployment.
+   - **Monitor Deployment**: Keep track of your deployments through AWS Elastic Beanstalk to ensure that everything is running smoothly in production.
+
 
 
 
