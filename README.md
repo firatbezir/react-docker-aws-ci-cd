@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # React Docker AWS CI/CD Workflow
 
 This repository demonstrates a **production-grade CI/CD workflow** utilizing **Docker** for containerization, **Travis CI** for continuous integration, and **AWS Elastic Beanstalk** for deployment.
