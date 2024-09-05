@@ -31,6 +31,7 @@ By keeping the React application simple, we avoid spending time on UI developmen
   ```bash
   cd your-project-name
 
+---
 
 - [x] **Create Dockerfile for Development:**
    - **File Name:** `Dockerfile.dev`
@@ -62,6 +63,7 @@ By keeping the React application simple, we avoid spending time on UI developmen
       ```Dockerfile
       CMD ["npm", "start"]
       ```
+---
 
 - [x] **Build Docker Image:**
    - **Command:**
@@ -69,6 +71,8 @@ By keeping the React application simple, we avoid spending time on UI developmen
      docker build -f Dockerfile.dev -t your-image-name .
      ```
    - **Note:** Replace `your-image-name` with your desired image name.
+     
+---
 
 - [x] **Run Docker Container:**
    - **Command:**
@@ -76,6 +80,8 @@ By keeping the React application simple, we avoid spending time on UI developmen
      docker run -p 3000:3000 your-image-name
      ```
    - **Note:** Ensure you use `-p` to map ports between the container and your local machine.
+
+---
 
 - [x] **Check Development Server:**
    - **URL:** `http://localhost:3000`
@@ -86,6 +92,8 @@ By keeping the React application simple, we avoid spending time on UI developmen
    - Two ss below show the difference before and after removing the duplicate dependencies in terms of storage:
   - Before: ![image](https://github.com/user-attachments/assets/409464c3-4514-46d7-89f8-75a790cfb514)
   - After : ![image](https://github.com/user-attachments/assets/ce072e13-2ad9-420b-8639-b1239b41cc7e)
+
+---
 
 - [x] **Handling Source Code Changes:**
    - **Issue:** Changes to source code inside the container won't automatically reflect in the browser.
@@ -108,15 +116,217 @@ By keeping the React application simple, we avoid spending time on UI developmen
   - Changes to the local file system are automatically reflected inside the running Docker container.
   - React's automatic refresh feature updates the page when code changes are made.
 
+---
+
+- [x] **Automate with Docker Compose:** Docker Compose streamlines the development process by simplifying long Docker run commands, allowing us to easily manage port mappings and volume mounts with a single command, making it more efficient for running applications like our React app in development.
+   - **Create `docker-compose.yml` File:**
+     ```yaml
+     version: '3'
+     services:
+       web:
+         build:
+           context: .
+           dockerfile: Dockerfile.dev
+         ports:
+           - "3000:3000" # map the 3000 outside of the container to  3000 inside of the container
+         volumes:
+           - /home/node/app/node_modules # this line provides not mapping up against app node modules inside of the container
+           - .:/home/node/app # . (dot) => current directory (pwd in run command) | this line provides map that folder (current folder) outside of the container to the app folder inside of the container
+     ```
+   - **Command to Run Docker Compose:**
+     ```bash
+     docker-compose up
+     ```
+
+    ## Best Practices
+  
+    - [x] **Keep `COPY` Command in Dockerfile:**
+       - **Reason:** Although volume mapping eliminates the need to copy the source code for development, it's good to leave the `COPY . .` instruction for future use cases, such as production or non-Docker Compose scenarios.
+    
+    - [x] **Use Docker Compose for Simplified Commands:**
+       - **Reason:** Docker Compose helps avoid long, complex `docker run` commands by managing port mappings and volumes for you.
+     
+---
+
+  ## Dealing with Test Suite Changes
+
+- [x] **Container Snapshot Issue:**
+   - **Explanation:** When the container is created, it captures a snapshot of the code. Any changes made to your test files after the container starts won't be reflected unless the container is rebuilt or volumes are used.
+
+- [x] **Solution - Using Docker Volumes:**
+   - **Command:**
+     ```bash
+     docker run -it -v $(pwd):/app your-image-id npm run test
+     ```
+   - **Explanation:** By attaching a volume, changes made to your local test files are reflected inside the running container. This way, you can rerun the tests with updated code.
+
+---
+
+## Simplifying with Docker Compose
+
+- [x] **Create a Separate Service for Testing:**
+   - **Update `docker-compose.yml`:**
+     ```yaml
+     version: '3'
+     services:
+       web:
+         build:
+           context: .
+           dockerfile: Dockerfile.dev
+         ports:
+           - "3000:3000"
+         volumes:
+           - /app/node_modules
+           - .:/app
+       test:
+         stdin_open: true 
+         build:
+           context: .
+           dockerfile: Dockerfile.dev
+         volumes:
+           - /home/node/app/node_modules
+           - .:/home/node/app
+         command: ["npm", "run", "test"]
+     ```
+   - **Explanation:** This Docker Compose setup creates two services: 
+     - `web` for running the development server.
+     - `test` for running the test suite with live file changes using volumes.
+
+- [x] **Run Docker Compose:**
+   - **Command:**
+     ```bash
+     docker-compose up --build
+     ```
+   - **Explanation:** This command builds both services (`web` and `test`), enabling live code changes with automatic test re-runs when files are modified.
+
+---
+
+## Interactivity Issues in Docker Compose
+
+- [x] **Lack of Interactivity in Test Suite:**
+   - **Problem:** Docker Compose doesn't provide full terminal interactivity (e.g., you can't press `P`, `T`, `Q` to filter tests).
+   - **Solution:** Use `docker exec` to interact with a running container.
+
+- [x] **Interactive Test Execution:**
+   - **Command:**
+     ```bash
+     docker exec -it <container_id> npm run test
+     ```
+   - **Explanation:** You can use this command to interact with the test suite after the container has been created, allowing full control (e.g., filtering test cases with `P`, `T`, `Q`).
+
+---
+
+## Summary
+
+- [x] **Docker Volumes Enable Live Changes:**
+   - **Explanation:** By attaching volumes, you can run tests with live code changes without needing to rebuild the container.
+
+- [x] **Two Approaches for Running Tests:**
+   1. Use `docker run -it` for full interactivity.
+   2. Use Docker Compose to manage both services (`web` and `test`), with automatic test re-runs via volume mapping.
+
+- [x] **Best Practice:** For interactivity with tests, use `docker exec` to attach to the running container.
+
+---
+
+# Docker Production Setup for React Application
+
+In this part, we will walk through how to configure a production-ready Docker setup for a React application using **multi-stage builds** with **Node.js** and **NGINX**. This allows us to build the app with Node.js and serve the static files using NGINX, which is better suited for production environments.
+
+---
+
+## Multi-Stage Dockerfile
+
+- [x] **Build Phase:**
+   - **Use Node Alpine:** Use the official Node.js Alpine image as the base to build the React app.
+   - **Install Dependencies:** Use `npm install` to install all necessary dependencies from the `package.json` file.
+   - **Build the Production Files:** Run `npm run build` to generate the optimized static files for production.
+
+- [x] **Run Phase:**
+   - **Use NGINX:** The second phase uses NGINX to serve the built static files.
+   - **Copy Files:** Copy the files from the first phase (build phase) into the NGINX server's root directory.
+
+### Dockerfile:
+```dockerfile
+# ---- First Phase: Build ----
+# Use the official Node.js 16 image with Alpine Linux as the base image.
+FROM node:16-alpine as builder
+
+# Set the working directory inside the container.
+WORKDIR /home/node/app
+
+# Copy only the package.json file to the working directory.
+COPY package.json .
+
+# Install all the dependencies.
+RUN npm install
+
+# Copy the rest of the application code to the working directory.
+COPY . .
+
+# Build the React application for production.
+RUN npm run build
+
+# ---- Second Phase: Run ----
+# Use the official Nginx image to serve the built files.
+FROM nginx
+
+EXPOSE 80
+
+# Copy the built files from the first phase (builder) to Nginx's default serving directory.
+COPY --from=builder /home/node/app/build /usr/share/nginx/html
+```
 
 
+## Running the Multi-Stage Dockerfile
 
+- [x] **Build the Docker Image:**
+   - **Command:**
+     ```bash
+     docker build -t your-image-name .
+     ```
+   - **Explanation:** This command builds the Docker image for production using the Dockerfile. Replace `your-image-name` with the desired name for your image.
 
+- [x] **Run the Container:**
+   - **Command:**
+     ```bash
+     docker run -p 8080:80 your-image-name
+     ```
+   - **Explanation:** The `-p` flag maps the container's port `80` to the local machine's port `8080`. NGINX will serve the production-ready React application on `localhost:8080`.
 
+---
 
+## Explanation of the Process
 
+- [x] **Build Phase:**
+   - **Install Dependencies:** We first install the necessary dependencies from `package.json` because these dependencies are required to run `npm run build`.
+   - **Run Build:** The `npm run build` command generates a `build` folder containing the production-ready static files. This is the folder we ultimately care about.
 
+- [x] **Run Phase:**
+   - **NGINX:** In the second phase, we switch to an NGINX image. We copy the contents of the `build` folder from the first phase into NGINX's serving directory, `/usr/share/nginx/html`.
+   - **Multi-Stage Build:** The key advantage of the multi-stage build process is that we only copy the production-ready files (the `build` directory) to the final image, discarding everything else from the first phase. This keeps the image size minimal.
 
+---
+
+## Key Concepts
+
+- [x] **Multi-Stage Build:**
+   - **Why Multi-Stage?** The idea behind a multi-stage build is to use one Docker image to build the app and then use another lighter image (like NGINX) to serve the static files. This helps reduce the final image size.
+   - **Optimized for Production:** By using NGINX, a high-performance web server, we ensure our application is ready for production workloads.
+
+- [x] **NGINX:**
+   - **Purpose:** NGINX is used to serve the static files (HTML, CSS, JavaScript) generated by the React build process.
+   - **Port Configuration:** We map port `80` inside the container (NGINX's default port) to port `8080` on the host machine.
+
+---
+
+## Testing the Setup
+
+- [x] **Test the Setup:**
+   - **URL:** [http://localhost:8080](http://localhost:8080)
+   - **Explanation:** After running the container, navigate to this URL in your browser. You should see the default React "Welcome to React" page, indicating that the production setup is working.
+
+---
 
 
 
