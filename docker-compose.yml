@@ -1,0 +1,20 @@
+version: '3'
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000" # map the 3000 outside of the container to  3000 inside of the container
+    volumes:
+      - /home/node/app/node_modules # this provides not mapping up against app node modules inside of the container
+      - .:/home/node/app # . (dot) => current directory (pwd in run command) | this line provides map that folder (current folder) outside of the container to the app folder inside of the container
+  tests:
+    stdin_open: true 
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - /home/node/app/node_modules
+      - .:/home/node/app
+    command: ["npm", "run", "test"]  # we are overriding the starting command when this test service (or container) is created as it will be starting with the "npm run test" command.
