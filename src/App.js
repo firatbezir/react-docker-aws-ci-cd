@@ -7,7 +7,7 @@ function App() {
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
-          Hi there, bye there
+          If you can see this message, this means you created a successfull CI/CD pipeline to deploy your app.
         </p>
         <a
           className="App-link"
