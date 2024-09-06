@@ -4,7 +4,6 @@ services:
 
 before_install:
   - docker build -t firatbezir/react-docker-ci-cd -f Dockerfile.dev .
-  - gem install aws-sdk elasticbeanstalk --version 3
 
 script:
   - docker run -e CI=true firatbezir/react-docker-ci-cd npm run test
