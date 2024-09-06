@@ -10,15 +10,15 @@ script:
 
 deploy:
   provider: elasticbeanstalk
-  dpl_version: 2
   region: "eu-north-1"
   app: "react-docker-aws-ci-cd"
   environment: "React-docker-aws-ci-cd-env"
   bucket_name: "elasticbeanstalk-eu-north-1-615299743652"
   bucket_path: "react-docker-aws-ci-cd"
-  skip_cleanup: true
   on:
     branch: master
+  skip_cleanup: true
   access_key_id: $AWS_ACCESS_KEY
   secret_access_key:
     secure: "$AWS_SECRET_KEY"
+  edge: true
