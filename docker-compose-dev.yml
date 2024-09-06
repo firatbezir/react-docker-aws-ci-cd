@@ -10,7 +10,6 @@ services:
       - /home/node/app/node_modules # this provides not mapping up against app node modules inside of the container
       - .:/home/node/app # . (dot) => current directory (pwd in run command) | this line provides map that folder (current folder) outside of the container to the app folder inside of the container
   tests:
-    stdin_open: true 
     build:
       context: .
       dockerfile: Dockerfile.dev
