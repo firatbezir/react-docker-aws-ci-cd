@@ -447,9 +447,3 @@ COPY --from=builder /home/node/app/build /usr/share/nginx/html
    - **Monitor Deployment**: Keep track of your deployments through AWS Elastic Beanstalk to ensure that everything is running smoothly in production.
 
 
-
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
->>>>>>> 0599d49 (Initialize project using Create React App)
